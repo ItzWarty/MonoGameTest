@@ -4,10 +4,16 @@ using Dargon.Ryu;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using System;
+using System.Threading;
+using NLog;
+using NLog.Config;
+using NLog.Targets;
+using NLog.Targets.Wrappers;
 
 namespace MonoGameTest {
    public static class SurfaceProgram {
       public static void Main(string[] args) {
+         InitializeLogging();
          Console.Title = "Surface";
 
          var ryu = new RyuFactory().Create();
@@ -23,6 +29,7 @@ namespace MonoGameTest {
 
             Console.WriteLine("Sending state: " + state);
             courierClient.SendBroadcast(state);
+            Thread.Sleep(10);
          }
       }
 
@@ -40,6 +47,34 @@ namespace MonoGameTest {
                state.IsButtonDown(Buttons.Y)
             });
          return stateDto;
+      }
+
+      private static void InitializeLogging() {
+         var config = new LoggingConfiguration();
+         Target debuggerTarget = new DebuggerTarget() {
+            Layout = "${longdate}|${level}|${logger}|${message} ${exception:format=tostring}"
+         };
+         Target consoleTarget = new ColoredConsoleTarget() {
+            Layout = "${longdate}|${level}|${logger}|${message} ${exception:format=tostring}"
+         };
+
+#if !DEBUG
+         debuggerTarget = new AsyncTargetWrapper(debuggerTarget);
+         consoleTarget = new AsyncTargetWrapper(consoleTarget);
+#else
+         AsyncTargetWrapper a; // Placeholder for optimizing imports
+#endif
+
+         config.AddTarget("debugger", debuggerTarget);
+         config.AddTarget("console", consoleTarget);
+
+         var debuggerRule = new LoggingRule("*", LogLevel.Trace, debuggerTarget);
+         config.LoggingRules.Add(debuggerRule);
+
+         var consoleRule = new LoggingRule("*", LogLevel.Trace, consoleTarget);
+         config.LoggingRules.Add(consoleRule);
+
+         LogManager.Configuration = config;
       }
    }
 }
