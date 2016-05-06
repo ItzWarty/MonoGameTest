@@ -24,27 +24,40 @@ namespace MonoGameTest {
          var courierClient = courierClientFactory.CreateUdpCourierClient(kPort, new CourierClientConfiguration {
             Identifier = Guid.NewGuid()
          });
+
+         int counter = 0;
          while (true) {
-            var state = GetGamePadState();
+            var state = GetGamePadState(counter++);
 
             Console.WriteLine("Sending state: " + state);
             courierClient.SendBroadcast(state);
-            Thread.Sleep(10);
+            Thread.Sleep(70);
          }
       }
 
-      private static GamePadStateDto GetGamePadState() {
+      private static GamePadStateDto GetGamePadState(int packetId) {
          var state = GamePad.GetState(PlayerIndex.One);
          var stateDto = new GamePadStateDto(
+            packetId,
             state.ThumbSticks.Left.X,
             state.ThumbSticks.Left.Y,
             state.ThumbSticks.Right.X,
             state.ThumbSticks.Right.Y,
+            state.Triggers.Left,
+            state.Triggers.Right,
             new[] {
                state.IsButtonDown(Buttons.A),
                state.IsButtonDown(Buttons.B),
                state.IsButtonDown(Buttons.X),
-               state.IsButtonDown(Buttons.Y)
+               state.IsButtonDown(Buttons.Y),
+               state.IsButtonDown(Buttons.LeftShoulder),
+               state.IsButtonDown(Buttons.RightShoulder),
+               state.IsButtonDown(Buttons.Back),
+               state.IsButtonDown(Buttons.Start),
+               state.DPad.Left == ButtonState.Pressed,
+               state.DPad.Right == ButtonState.Pressed,
+               state.DPad.Up == ButtonState.Pressed,
+               state.DPad.Down == ButtonState.Pressed
             });
          return stateDto;
       }
